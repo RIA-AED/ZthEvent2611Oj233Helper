@@ -38,7 +38,7 @@ public final class TransferFlowManager {
     }
 
     /**
-     * 开始进服引导：切换旁观模式；未选择过「不再提示」时先弹出提示对话框，确认后开始跨服尝试。
+     * 开始进服引导（托管模式）：切换旁观模式；未选择过「不再提示」时先弹出提示对话框，确认后开始跨服尝试。
      *
      * <p>应在玩家所属的 EntityScheduler 线程上调用。
      */
@@ -58,6 +58,22 @@ public final class TransferFlowManager {
             return;
         }
         plugin.getLogger().info(() -> "向玩家 " + player.getName() + " 展示活动提示对话框");
+        noticeDialogs.show(player, () -> startAttempts(player));
+    }
+
+    /**
+     * 显式打开提示对话框（通用模式用法，托管模式下也可用）。
+     *
+     * <p>与 {@link #begin(Player)} 不同：不切换游戏模式，且即使玩家选择过「不再提示」也会显示对话框。
+     * 确认后开始跨服尝试。
+     *
+     * <p>应在玩家所属的 EntityScheduler 线程上调用。
+     */
+    public void openDialog(Player player) {
+        if (!player.isOnline()) {
+            return;
+        }
+        plugin.getLogger().info(() -> "向玩家 " + player.getName() + " 打开活动提示对话框");
         noticeDialogs.show(player, () -> startAttempts(player));
     }
 

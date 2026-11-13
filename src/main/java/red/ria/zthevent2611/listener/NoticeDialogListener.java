@@ -3,11 +3,13 @@ package red.ria.zthevent2611.listener;
 import io.papermc.paper.connection.PlayerGameConnection;
 import io.papermc.paper.dialog.DialogResponseView;
 import io.papermc.paper.event.player.PlayerCustomClickEvent;
+import java.util.function.Supplier;
 import net.kyori.adventure.key.Key;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import red.ria.zthevent2611.config.PluginSettings;
 import red.ria.zthevent2611.flow.TransferFlowManager;
 import red.ria.zthevent2611.message.NoticeDialogService;
 
@@ -16,16 +18,19 @@ import red.ria.zthevent2611.message.NoticeDialogService;
  *
  * <p>对话框按钮使用固定的自定义动作标识，通过 {@code PlayerCustomClickEvent} 接收点击；
  * 因此同一个对话框可以被任意多玩家、任意多次点击，不受一次性回调限制。
- * 确认后开始跨服流程；取消则踢出玩家（由其所在群组网络自动带回云端）。
+ * 确认后开始跨服流程；取消在托管模式下踢出玩家（返回云端），通用模式下只关闭对话框。
  */
 public final class NoticeDialogListener implements Listener {
 
     private final NoticeDialogService noticeDialogs;
     private final TransferFlowManager flows;
+    private final Supplier<PluginSettings> settings;
 
-    public NoticeDialogListener(NoticeDialogService noticeDialogs, TransferFlowManager flows) {
+    public NoticeDialogListener(NoticeDialogService noticeDialogs, TransferFlowManager flows,
+                                Supplier<PluginSettings> settings) {
         this.noticeDialogs = noticeDialogs;
         this.flows = flows;
+        this.settings = settings;
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -48,7 +53,8 @@ public final class NoticeDialogListener implements Listener {
             return;
         }
         if (!confirm) {
-            noticeDialogs.handleCancel(player);
+            PluginSettings current = settings.get();
+            noticeDialogs.handleCancel(player, current != null && current.managed());
             return;
         }
         DialogResponseView response = event.getDialogResponseView();

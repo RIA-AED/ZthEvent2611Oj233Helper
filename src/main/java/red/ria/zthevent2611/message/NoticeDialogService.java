@@ -119,12 +119,21 @@ public final class NoticeDialogService {
     }
 
     /**
-     * 处理玩家点击取消：踢出玩家（由其所在群组网络自动带回云端），不开始跨服流程。
+     * 处理玩家点击取消。
+     *
+     * <p>托管模式（{@code managed=true}）下踢出玩家（由其所在群组网络自动带回云端）；
+     * 通用模式下只关闭对话框，不踢出玩家。
      *
      * <p>由 {@link NoticeDialogListener} 在收到 {@code PlayerCustomClickEvent} 时调用。
+     *
+     * @param kick 是否踢出玩家
      */
-    public void handleCancel(Player player) {
+    public void handleCancel(Player player, boolean kick) {
         NoticeDialog current = config;
+        if (!kick) {
+            plugin.getLogger().info(() -> "玩家 " + player.getName() + " 取消了进服提示（未开始跨服流程）");
+            return;
+        }
         player.getScheduler().execute(plugin, () -> {
             if (!player.isOnline()) {
                 return;

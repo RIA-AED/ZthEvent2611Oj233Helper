@@ -45,7 +45,7 @@ final class TransferFlow {
         }
         chatNotice.sendTransferring(player);
         runAttempt();
-        scheduleKick();
+        scheduleTimeout();
     }
 
     /**
@@ -86,24 +86,30 @@ final class TransferFlow {
                 settings.intervalTicks());
     }
 
-    private void scheduleKick() {
+    private void scheduleTimeout() {
         player.getScheduler().runDelayed(plugin,
-                task -> kickIfStillHere(),
+                task -> handleTimeout(),
                 this::retire,
                 settings.timeoutTicks());
     }
 
-    private void kickIfStillHere() {
+    private void handleTimeout() {
         if (finished || !player.isOnline()) {
             return;
         }
         finished = true;
-        plugin.getLogger().info(() -> "玩家 " + playerName + " 跨服超时（每 " + settings.intervalSeconds()
-                + " 秒尝试，共 " + settings.attempts() + " 次），已踢出");
-        player.kick(settings.kickMessage());
+        if (settings.managed()) {
+            plugin.getLogger().info(() -> "玩家 " + playerName + " 跨服超时（每 "
+                    + settings.intervalSeconds() + " 秒尝试，共 " + settings.attempts() + " 次），已踢出");
+            player.kick(settings.kickMessage());
+            return;
+        }
+        plugin.getLogger().warning(() -> "玩家 " + playerName + " 跨服命令已尝试 " + settings.attempts()
+                + " 次，仍未离开本服；当前为通用模式（managed=false），不踢出玩家");
     }
 
     private void retire() {
         finished = true;
     }
 }
+

@@ -12,16 +12,19 @@ import org.bukkit.configuration.file.FileConfiguration;
  *
  * <p>解析失败时抛出 {@link IllegalArgumentException}，由插件决定是禁用自身还是保留旧配置。
  *
- * @param startOnJoin 玩家进服后是否自动开始跨服流程
+ * @param managed 托管模式：{@code true} 时进服自动旁观并弹窗、取消或超时踢出玩家（活动入口服用法）；
+ *                {@code false} 时进服不自动触发，由命令打开对话框，取消不踢出，超时也不踢出（通用用法）
+ * @param startOnJoin 托管模式下玩家进服后是否自动开始引导流程
  * @param gamemode 开始流程时切换的游戏模式，{@code null} 表示不改变
  * @param intervalSeconds 两次命令尝试之间的间隔（秒）
  * @param attempts 命令最多执行几次
  * @param commands 每次尝试执行的命令模板，支持 {@code {player}} 与 {@code {uuid}}
- * @param kickMessage 超时踢出玩家时显示的消息
+ * @param kickMessage 托管模式下超时踢出玩家时显示的消息
  * @param chatMessages 聊天栏提示
  * @param noticeDialog 进服提示对话框
  */
 public record PluginSettings(
+        boolean managed,
         boolean startOnJoin,
         GameMode gamemode,
         int intervalSeconds,
@@ -53,6 +56,7 @@ public record PluginSettings(
      * @throws IllegalArgumentException 配置无效时抛出，消息为可直接展示给管理员的说明
      */
     public static PluginSettings load(FileConfiguration config) {
+        boolean managed = config.getBoolean("managed", false);
         boolean startOnJoin = config.getBoolean("flow.start-on-join", true);
         GameMode gamemode = parseGamemode(config.getString("flow.gamemode", "SPECTATOR"));
 
@@ -74,7 +78,7 @@ public record PluginSettings(
                 "<gray>跨服超时，请重新连接后重试.</gray>");
         ChatMessages chatMessages = ChatMessages.load(config);
         NoticeDialog noticeDialog = NoticeDialog.load(config);
-        return new PluginSettings(startOnJoin, gamemode, intervalSeconds, attempts,
+        return new PluginSettings(managed, startOnJoin, gamemode, intervalSeconds, attempts,
                 commands, kickMessage, chatMessages, noticeDialog);
     }
 

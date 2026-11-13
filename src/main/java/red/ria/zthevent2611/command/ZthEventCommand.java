@@ -20,7 +20,7 @@ import red.ria.zthevent2611.Permissions;
 import red.ria.zthevent2611.ZthEvent2611Oj233HelperPlugin;
 
 /**
- * {@code /zth-event}：重载配置与手动启动跨服流程。
+ * {@code /zth-event}：打开提示对话框、开始引导流程与重载配置。
  *
  * <p>命令通过 Paper 的 Brigadier API 注册，因此不在 plugin.yml 的 {@code commands}
  * 中声明；权限节点在 plugin.yml 中声明。
@@ -35,15 +35,23 @@ public final class ZthEventCommand {
 
     public LiteralCommandNode<CommandSourceStack> build() {
         return Commands.literal("zth-event")
-                .requires(source -> canReload(source.getSender()) || canStart(source.getSender()))
+                .requires(source -> canOpen(source.getSender())
+                        || canReload(source.getSender())
+                        || canStart(source.getSender()))
                 .executes(this::sendHelp)
-                .then(Commands.literal("reload")
-                        .requires(source -> canReload(source.getSender()))
-                        .executes(this::reload))
+                .then(Commands.literal("open")
+                        .requires(source -> canOpen(source.getSender()))
+                        .executes(this::openSelf)
+                        .then(Commands.argument("player", ArgumentTypes.player())
+                                .requires(source -> canOpenOthers(source.getSender()))
+                                .executes(this::openOther)))
                 .then(Commands.literal("start")
                         .requires(source -> canStart(source.getSender()))
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .executes(this::start)))
+                .then(Commands.literal("reload")
+                        .requires(source -> canReload(source.getSender()))
+                        .executes(this::reload))
                 .build();
     }
 
@@ -51,17 +59,74 @@ public final class ZthEventCommand {
         CommandSender sender = context.getSource().getSender();
         sender.sendMessage(Component.text("ZthEvent2611Oj233Helper", NamedTextColor.WHITE)
                 .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
-                .append(Component.text("跨服流程管理", NamedTextColor.GRAY)));
+                .append(Component.text("跨服提示与流程", NamedTextColor.GRAY)));
         List<Component> lines = new ArrayList<>();
+        if (canOpen(sender)) {
+            lines.add(commandLine("/zth-event open", "打开提示对话框",
+                    "为自己打开进服提示对话框，确认后执行跨服命令。"));
+        }
+        if (canOpenOthers(sender)) {
+            lines.add(commandLine("/zth-event open <player>", "为玩家打开提示对话框",
+                    "为指定玩家打开进服提示对话框。"));
+        }
+        if (canStart(sender)) {
+            lines.add(commandLine("/zth-event start <player>", "开始托管引导",
+                    "托管模式下切换旁观并开始引导；通用模式下等同于 open。"));
+        }
         if (canReload(sender)) {
             lines.add(commandLine("/zth-event reload", "重载配置",
                     "重新读取 config.yml；配置无效时保留旧配置。"));
         }
-        if (canStart(sender)) {
-            lines.add(commandLine("/zth-event start <player>", "为玩家启动跨服流程",
-                    "立即为指定玩家打开提示对话框并开始跨服流程。"));
-        }
         lines.forEach(sender::sendMessage);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int openSelf(CommandContext<CommandSourceStack> context) {
+        CommandSender sender = context.getSource().getSender();
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(Component.text("只有玩家可以直接打开对话框，请使用 /zth-event open <player>。",
+                    NamedTextColor.GRAY));
+            return 0;
+        }
+        if (!plugin.openDialog(player)) {
+            sender.sendMessage(Component.text("你已在跨服流程中。", NamedTextColor.GRAY));
+            return 0;
+        }
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int openOther(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        Player target = resolveTarget(context, source);
+        if (target == null) {
+            return 0;
+        }
+        if (!plugin.openDialog(target)) {
+            source.getSender().sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
+            return 0;
+        }
+        source.getSender().sendMessage(Component.text("已为 ", NamedTextColor.GRAY)
+                .append(Component.text(target.getName(), NamedTextColor.WHITE))
+                .append(Component.text(" 打开提示对话框。", NamedTextColor.GRAY)));
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        CommandSourceStack source = context.getSource();
+        Player target = resolveTarget(context, source);
+        if (target == null) {
+            return 0;
+        }
+        boolean managed = plugin.settings() != null && plugin.settings().managed();
+        boolean started = managed ? plugin.beginFlow(target) : plugin.openDialog(target);
+        if (!started) {
+            source.getSender().sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
+            return 0;
+        }
+        Component feedback = Component.text("已为 ", NamedTextColor.GRAY)
+                .append(Component.text(target.getName(), NamedTextColor.WHITE))
+                .append(Component.text(managed ? " 开始引导流程。" : " 打开提示对话框。", NamedTextColor.GRAY));
+        source.getSender().sendMessage(feedback);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -77,24 +142,15 @@ public final class ZthEventCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private int start(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
-        CommandSourceStack source = context.getSource();
-        CommandSender sender = source.getSender();
+    private static Player resolveTarget(CommandContext<CommandSourceStack> context,
+                                        CommandSourceStack source) throws CommandSyntaxException {
         Player target = context.getArgument("player", PlayerSelectorArgumentResolver.class)
                 .resolve(source)
                 .getFirst();
         if (target == null) {
-            sender.sendMessage(Component.text("找不到该玩家。", NamedTextColor.GRAY));
-            return 0;
+            source.getSender().sendMessage(Component.text("找不到该玩家。", NamedTextColor.GRAY));
         }
-        if (!plugin.beginFlow(target)) {
-            sender.sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
-            return 0;
-        }
-        sender.sendMessage(Component.text("已为 ", NamedTextColor.GRAY)
-                .append(Component.text(target.getName(), NamedTextColor.WHITE))
-                .append(Component.text(" 启动跨服流程。", NamedTextColor.GRAY)));
-        return Command.SINGLE_SUCCESS;
+        return target;
     }
 
     private static Component commandLine(String usage, String description, String hover) {
@@ -105,6 +161,14 @@ public final class ZthEventCommand {
                 .append(command)
                 .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
                 .append(Component.text(description, NamedTextColor.GRAY));
+    }
+
+    private static boolean canOpen(CommandSender sender) {
+        return sender.hasPermission(Permissions.COMMAND_OPEN);
+    }
+
+    private static boolean canOpenOthers(CommandSender sender) {
+        return sender.hasPermission(Permissions.COMMAND_OPEN_OTHERS);
     }
 
     private static boolean canReload(CommandSender sender) {

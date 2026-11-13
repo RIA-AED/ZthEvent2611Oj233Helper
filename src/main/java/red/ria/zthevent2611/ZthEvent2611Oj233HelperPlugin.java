@@ -52,7 +52,7 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(
                 new PlayerFlowListener(this, flows, this::settings), this);
         getServer().getPluginManager().registerEvents(
-                new NoticeDialogListener(noticeDialogs, flows), this);
+                new NoticeDialogListener(noticeDialogs, flows, this::settings), this);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
                 event.registrar().register(new ZthEventCommand(this).build(), "管理跨服流程"));
 
@@ -78,7 +78,7 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
     }
 
     /**
-     * 为玩家开始进服引导（旁观 + 提示对话框 + 跨服流程）。可在任意线程调用，内部会调度到玩家所属线程。
+     * 为玩家开始托管模式的进服引导（旁观 + 提示对话框 + 跨服流程）。可在任意线程调用。
      *
      * @return 玩家已在跨服流程中或插件未启用时返回 {@code false}
      */
@@ -88,6 +88,21 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
             return false;
         }
         player.getScheduler().execute(this, () -> manager.begin(player), null, 1L);
+        return true;
+    }
+
+    /**
+     * 向玩家打开提示对话框（不切换游戏模式、不判断「不再提示」），确认后开始跨服流程。
+     * 可供其他插件调用（例如 NPC 交互、自定义命令）。
+     *
+     * @return 玩家已在跨服流程中或插件未启用时返回 {@code false}
+     */
+    public boolean openDialog(Player player) {
+        TransferFlowManager manager = flows;
+        if (manager == null || !player.isOnline() || manager.isActive(player.getUniqueId())) {
+            return false;
+        }
+        player.getScheduler().execute(this, () -> manager.openDialog(player), null, 1L);
         return true;
     }
 
@@ -114,7 +129,8 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         if (dialogs != null) {
             dialogs.apply(loaded.noticeDialog());
         }
-        getLogger().info(() -> "配置已重载：自动开始=" + loaded.startOnJoin()
+        getLogger().info(() -> "配置已重载：托管模式=" + loaded.managed()
+                + "，自动开始=" + loaded.startOnJoin()
                 + "，游戏模式=" + (loaded.gamemode() == null ? "不改变" : loaded.gamemode())
                 + "，间隔=" + loaded.intervalSeconds() + " 秒，尝试=" + loaded.attempts() + " 次"
                 + "，命令数=" + loaded.commands().size());
@@ -125,6 +141,9 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         PluginSettings current = settings;
         getLogger().info("========== ZthEvent2611Oj233Helper 启动 ==========");
         getLogger().info("版本：" + getPluginMeta().getVersion());
+        getLogger().info("运行模式：" + (current.managed()
+                ? "托管模式（进服自动旁观并弹窗，取消/超时踢出）"
+                : "通用模式（不自动触发，用 /zth-event open 打开对话框）"));
         getLogger().info("进服自动开始流程：" + current.startOnJoin());
         getLogger().info("流程切换游戏模式：" + (current.gamemode() == null ? "不改变" : current.gamemode()));
         getLogger().info("进服提示：对话框（不再提示复选框默认"
@@ -139,4 +158,5 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         getLogger().info("================================================");
     }
 }
+
 

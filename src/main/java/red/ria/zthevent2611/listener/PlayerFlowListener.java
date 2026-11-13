@@ -34,18 +34,22 @@ public final class PlayerFlowListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        PluginSettings current = settings.get();
+        if (current == null || !current.managed()) {
+            // 通用模式：进服不自动触发，由命令打开提示对话框。
+            return;
+        }
+        if (!current.startOnJoin()) {
+            return;
+        }
         if (player.hasPermission(Permissions.BYPASS)) {
             plugin.getLogger().info(() -> "玩家 " + player.getName() + " 拥有 "
                     + Permissions.BYPASS + "，跳过旁观与跨服流程");
             return;
         }
-        PluginSettings current = settings.get();
-        if (current == null || !current.startOnJoin()) {
-            return;
-        }
         player.getScheduler().execute(plugin, () -> {
             PluginSettings latest = settings.get();
-            if (latest == null || !latest.startOnJoin() || !player.isOnline()) {
+            if (latest == null || !latest.managed() || !latest.startOnJoin() || !player.isOnline()) {
                 return;
             }
             flows.begin(player);
