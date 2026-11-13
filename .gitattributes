@@ -1,0 +1,13 @@
+# 统一换行符：仓库内脚本与文档按 LF，Windows 批处理按 CRLF。
+* text=auto
+.gitattributes text eol=lf
+.gitignore text eol=lf
+*.java text eol=lf
+*.kts text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.properties text eol=lf
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+*.png binary

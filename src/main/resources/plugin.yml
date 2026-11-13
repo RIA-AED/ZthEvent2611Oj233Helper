@@ -1,0 +1,19 @@
+name: ZthEvent2611Oj233Helper
+version: '${version}'
+main: red.ria.zthevent2611.ZthEvent2611Oj233HelperPlugin
+api-version: '26.1.2'
+authors: [RIA]
+description: 元竞 鱼来 KOIKOI 活动服务器的进服旁观与跨服引导.
+website: https://ria.red
+folia-supported: true
+
+permissions:
+  zthevent2611.bypass:
+    description: 进服时跳过旁观模式切换与自动跨服流程.
+    default: op
+  zthevent2611.command.reload:
+    description: 允许使用 /zth-event reload 重载配置.
+    default: op
+  zthevent2611.command.start:
+    description: 允许使用 /zth-event start 手动启动跨服流程.
+    default: op

@@ -1,0 +1,58 @@
+# ===================================================================
+# ZthEvent2611Oj233Helper 配置
+#
+# 消息文本均使用 MiniMessage 语法：
+#   颜色   <gray> <white> <red> <aqua>
+#   装饰   <u> 下划线、<b> 加粗
+# 玩家点击 [不再提示] 的选择会记录在 player-data.yml 中（插件自动维护）。
+# 跨服本身由其他插件负责，本插件只负责重复执行下面配置的命令。
+# ===================================================================
+
+# 跨服流程设置
+flow:
+  # 玩家进入服务器后是否自动开始跨服流程。
+  # 关闭后可通过 /zth-event start 手动启动。
+  start-on-join: true
+
+  # 开始跨服流程时切换到的游戏模式。
+  # 可选：SURVIVAL / CREATIVE / ADVENTURE / SPECTATOR / NONE（不改变模式）。
+  gamemode: SPECTATOR
+
+  # 每隔多少秒执行一次下面的命令。
+  interval-seconds: 10
+
+  # 最多执行几次命令；总超时 = interval-seconds × attempts。
+  # 超过该时间玩家仍在本服时会被踢出（默认 10 × 3 = 30 秒）。
+  attempts: 3
+
+  # 每次尝试执行的命令，由控制台执行。
+  # 可用占位符：{player} 为玩家名，{uuid} 为玩家 UUID。
+  # 跨服由其他插件负责，这里填写触发跨服的命令即可。
+  commands:
+    - "omt {player} koikoi"
+
+  # 超时踢出玩家时显示的消息。
+  kick-message: '<gray>跨服超时，请重新连接后重试.</gray>'
+
+# 聊天栏提示
+messages:
+  # 消息开头、结尾以及上下两部分之间的空行数量。
+  gap-lines: 1
+
+  # 上半部分：活动说明，可写多行。
+  # 玩家点击 [不再提示] 后不再显示。
+  notice:
+    - '<gray><white>元竞 鱼来 KOIKOI</white> 是由 <red>RIA</red> <white>×</white> <aqua>TRIALHAMMER</aqua> 联合开发的限时活动服务器.</gray>'
+    - '<gray>此服务器与 RIA 群组网络的聊天、存档和经济等系统不互通.</gray>'
+
+  # 下半部分：跨服进行中的提示，始终显示。
+  transferring: '<gray>正在进行跨服......</gray>'
+
+  # “不再提示”按钮
+  dismiss:
+    # 按钮文字，会追加在上半部分最后一行的末尾。
+    text: '<u>[不再提示]</u>'
+    # 鼠标悬停提示。
+    hover: '<gray>点击后不再显示上半部分提示.</gray>'
+    # 点击后的反馈消息。
+    confirmed: '<gray>已隐藏上半部分提示.</gray>'
