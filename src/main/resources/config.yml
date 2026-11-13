@@ -46,9 +46,11 @@ messages:
     # 对话框标题
     title: '<white>元竞 鱼来 KOIKOI</white>'
 
-    # 对话框正文，可写多行（会合并为同一个文本组件）
+    # 对话框正文，可写多行；空行会显示为段落间距。
+    # 每行不宜过长，对话框会自动换行，手动控制断行观感更好。
     body:
-      - '<gray><white>元竞 鱼来 KOIKOI</white> 是由 <red>RIA</red> <white>×</white> <aqua>TRIALHAMMER</aqua> 联合开发的限时活动服务器.</gray>'
+      - '<gray>由 <red>RIA</red> <white>×</white> <aqua>TRIALHAMMER</aqua> 联合开发的限时活动服务器.</gray>'
+      - ''
       - '<gray>此服务器与 RIA 群组网络的聊天、存档和经济等系统不互通.</gray>'
 
     # 「不再提示」复选框：默认不勾选；勾选并确认后不再弹出此对话框

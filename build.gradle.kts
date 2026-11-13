@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "red.ria"
-version = "1.1.0"
+version = "1.1.1"
 
 // 在配置阶段取出版本号，避免在任务执行阶段访问 project（Gradle 10 将不再允许）。
 val pluginVersion = version.toString()

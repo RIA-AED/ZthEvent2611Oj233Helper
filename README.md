@@ -29,7 +29,7 @@
 
 ## 安装与快速开始
 
-1. 构建插件（见下文「构建」）或取得 `ZthEvent2611Oj233Helper-1.1.0.jar`。
+1. 构建插件（见下文「构建」）或取得 `ZthEvent2611Oj233Helper-1.1.1.jar`。
 2. 将 jar 放入服务端的 `plugins/` 目录并启动一次服务器。
 3. 编辑 `plugins/ZthEvent2611Oj233Helper/config.yml`，把 `flow.commands` 改成实际的跨服命令。
    使用 OhMyTransfer 时通常是：
@@ -59,6 +59,10 @@
 
 ## 效果
 
+进服提示对话框（「不再提示」默认不勾选，下方为确认按钮）：
+
+![进服提示对话框](docs/screenshots/dialog-notice.png)
+
 超过总超时仍未离开本服时被踢出：
 
 ![超时踢出](docs/screenshots/kick-timeout.png)
@@ -78,7 +82,7 @@
 | `messages.gap-lines` | `1` | 聊天栏消息前后各留的空行数量 |
 | `messages.transferring` | `<gray>正在进行跨服......</gray>` | 确认后显示的跨服进行中提示 |
 | `messages.dialog.title` | `<white>元竞 鱼来 KOIKOI</white>` | 对话框标题 |
-| `messages.dialog.body` | 活动说明两行 | 对话框正文，可写多行 |
+| `messages.dialog.body` | 活动说明 | 对话框正文，可写多行；空行显示为段落间距 |
 | `messages.dialog.checkbox.key` | `dont_show_again` | 复选框表单字段名 |
 | `messages.dialog.checkbox.label` | `不再提示` | 复选框文字 |
 | `messages.dialog.checkbox.initial` | `false` | 复选框默认是否勾选 |
@@ -116,7 +120,7 @@ notice-hidden:
 ./gradlew test         # 只运行单元测试
 ```
 
-产物位于 `build/libs/ZthEvent2611Oj233Helper-1.1.0.jar`。
+产物位于 `build/libs/ZthEvent2611Oj233Helper-1.1.1.jar`。
 默认使用 Paper 26.1.2 的 API 编译；如需针对其他版本编译，可覆盖 Gradle 属性：
 
 ```bash
@@ -139,4 +143,7 @@ notice-hidden:
 
 **想临时关闭进服自动流程？**
 把 `flow.start-on-join` 设为 `false`，需要时用 `/zth-event start <player>` 手动触发。
+
+
+
 

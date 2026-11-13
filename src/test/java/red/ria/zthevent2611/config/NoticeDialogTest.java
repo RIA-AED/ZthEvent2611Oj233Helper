@@ -69,6 +69,23 @@ class NoticeDialogTest {
     }
 
     @Test
+    void keepsBlankLineAsParagraphGap() {
+        YamlConfiguration config = parse("""
+                messages:
+                  dialog:
+                    body:
+                      - '第一段'
+                      - ''
+                      - '第二段'
+                """);
+
+        NoticeDialog dialog = NoticeDialog.load(config);
+
+        assertEquals(3, dialog.bodyLines().size());
+        assertEquals(Component.empty(), dialog.bodyLines().get(1));
+    }
+
+    @Test
     void acceptsCustomCheckboxSettings() {
         YamlConfiguration config = parse("""
                 messages:

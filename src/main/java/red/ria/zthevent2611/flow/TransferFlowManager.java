@@ -62,6 +62,14 @@ public final class TransferFlowManager {
     }
 
     /**
+     * 玩家确认提示对话框后开始跨服尝试；由 {@link red.ria.zthevent2611.listener.NoticeDialogListener}
+     * 在玩家所属线程上调用。
+     */
+    public void startAfterConfirm(Player player) {
+        startAttempts(player);
+    }
+
+    /**
      * 展示对话框后开始跨服尝试；已在流程中的玩家会先中止旧流程。
      */
     private void startAttempts(Player player) {
@@ -102,7 +110,6 @@ public final class TransferFlowManager {
      * 移除玩家的流程状态；应在玩家退出时调用。
      */
     public void stop(Player player) {
-        noticeDialogs.forget(player);
         TransferFlow flow = active.remove(player.getUniqueId());
         if (flow != null) {
             flow.stop();

@@ -48,12 +48,22 @@ public record NoticeDialog(
 
         List<Component> bodyLines = new ArrayList<>();
         List<String> rawBody = config.getStringList("messages.dialog.body");
-        for (int i = 0; i < rawBody.size(); i++) {
+        int from = 0;
+        int to = rawBody.size();
+        while (from < to && isBlankLine(rawBody.get(from))) {
+            from++;
+        }
+        while (to > from && isBlankLine(rawBody.get(to - 1))) {
+            to--;
+        }
+        for (int i = from; i < to; i++) {
             String line = rawBody.get(i);
-            if (line == null || line.isBlank()) {
-                continue;
+            if (isBlankLine(line)) {
+                // 空行保留为段落间距。
+                bodyLines.add(Component.empty());
+            } else {
+                bodyLines.add(PluginSettings.miniMessage(line.trim(), "messages.dialog.body[" + i + "]"));
             }
-            bodyLines.add(PluginSettings.miniMessage(line.trim(), "messages.dialog.body[" + i + "]"));
         }
         if (bodyLines.isEmpty()) {
             String single = config.getString("messages.dialog.body");
@@ -86,8 +96,13 @@ public record NoticeDialog(
                 checkboxOnTrue, checkboxOnFalse, confirmLabel, confirmTooltip, canCloseWithEscape);
     }
 
+    private static boolean isBlankLine(String line) {
+        return line == null || line.isBlank();
+    }
+
     /**
      * 合并为一个文本组件，用换行分隔（对话框每个正文组件都自带边距，合并后排版更紧凑）。
+     * 正文中的空行会保留为段落间距。
      */
     public Component body() {
         Component result = Component.empty();

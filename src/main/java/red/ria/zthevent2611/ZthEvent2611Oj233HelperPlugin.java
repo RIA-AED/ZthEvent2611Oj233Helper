@@ -7,6 +7,7 @@ import red.ria.zthevent2611.command.ZthEventCommand;
 import red.ria.zthevent2611.config.PluginSettings;
 import red.ria.zthevent2611.data.NoticeStore;
 import red.ria.zthevent2611.flow.TransferFlowManager;
+import red.ria.zthevent2611.listener.NoticeDialogListener;
 import red.ria.zthevent2611.listener.PlayerFlowListener;
 import red.ria.zthevent2611.message.ChatNoticeService;
 import red.ria.zthevent2611.message.NoticeDialogService;
@@ -50,6 +51,8 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(
                 new PlayerFlowListener(this, flows, this::settings), this);
+        getServer().getPluginManager().registerEvents(
+                new NoticeDialogListener(noticeDialogs, flows), this);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event ->
                 event.registrar().register(new ZthEventCommand(this).build(), "管理跨服流程"));
 
@@ -60,9 +63,6 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
     public void onDisable() {
         if (flows != null) {
             flows.shutdown();
-        }
-        if (noticeDialogs != null) {
-            noticeDialogs.shutdown();
         }
         if (noticeStore != null) {
             noticeStore.saveNow();
@@ -139,3 +139,4 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         getLogger().info("================================================");
     }
 }
+
