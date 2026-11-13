@@ -18,7 +18,8 @@ import org.bukkit.configuration.file.FileConfiguration;
  * @param attempts 命令最多执行几次
  * @param commands 每次尝试执行的命令模板，支持 {@code {player}} 与 {@code {uuid}}
  * @param kickMessage 超时踢出玩家时显示的消息
- * @param announcements 聊天栏提示
+ * @param chatMessages 聊天栏提示
+ * @param noticeDialog 进服提示对话框
  */
 public record PluginSettings(
         boolean startOnJoin,
@@ -27,7 +28,8 @@ public record PluginSettings(
         int attempts,
         List<String> commands,
         Component kickMessage,
-        Announcements announcements
+        ChatMessages chatMessages,
+        NoticeDialog noticeDialog
 ) {
 
     private static final int TICKS_PER_SECOND = 20;
@@ -70,9 +72,10 @@ public record PluginSettings(
 
         Component kickMessage = miniMessage(config, "flow.kick-message",
                 "<gray>跨服超时，请重新连接后重试.</gray>");
-        Announcements announcements = Announcements.load(config);
+        ChatMessages chatMessages = ChatMessages.load(config);
+        NoticeDialog noticeDialog = NoticeDialog.load(config);
         return new PluginSettings(startOnJoin, gamemode, intervalSeconds, attempts,
-                commands, kickMessage, announcements);
+                commands, kickMessage, chatMessages, noticeDialog);
     }
 
     private static GameMode parseGamemode(String raw) {

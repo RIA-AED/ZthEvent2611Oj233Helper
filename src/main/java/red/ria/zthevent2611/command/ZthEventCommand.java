@@ -59,7 +59,7 @@ public final class ZthEventCommand {
         }
         if (canStart(sender)) {
             lines.add(commandLine("/zth-event start <player>", "为玩家启动跨服流程",
-                    "立即为指定玩家发送提示并开始执行跨服命令。"));
+                    "立即为指定玩家打开提示对话框并开始跨服流程。"));
         }
         lines.forEach(sender::sendMessage);
         return Command.SINGLE_SUCCESS;
@@ -87,7 +87,7 @@ public final class ZthEventCommand {
             sender.sendMessage(Component.text("找不到该玩家。", NamedTextColor.GRAY));
             return 0;
         }
-        if (!plugin.startFlow(target)) {
+        if (!plugin.beginFlow(target)) {
             sender.sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
             return 0;
         }

@@ -4,21 +4,22 @@
 # 消息文本均使用 MiniMessage 语法：
 #   颜色   <gray> <white> <red> <aqua>
 #   装饰   <u> 下划线、<b> 加粗
-# 玩家点击 [不再提示] 的选择会记录在 player-data.yml 中（插件自动维护）。
-# 跨服本身由其他插件负责，本插件只负责重复执行下面配置的命令。
+# 玩家在进服对话框里勾选「不再提示」并确认后，选择会记录在 player-data.yml 中
+# （插件自动维护），之后进服不再弹出该对话框。
+# 跨服本身由其他插件负责，本插件只负责提示、重复执行下面配置的命令与超时踢出。
 # ===================================================================
 
 # 跨服流程设置
 flow:
-  # 玩家进入服务器后是否自动开始跨服流程。
+  # 玩家进入服务器后是否自动开始引导流程。
   # 关闭后可通过 /zth-event start 手动启动。
   start-on-join: true
 
-  # 开始跨服流程时切换到的游戏模式。
+  # 开始引导时切换到的游戏模式。
   # 可选：SURVIVAL / CREATIVE / ADVENTURE / SPECTATOR / NONE（不改变模式）。
   gamemode: SPECTATOR
 
-  # 每隔多少秒执行一次下面的命令。
+  # 玩家确认提示对话框后，每隔多少秒执行一次下面的命令。
   interval-seconds: 10
 
   # 最多执行几次命令；总超时 = interval-seconds × attempts。
@@ -34,25 +35,37 @@ flow:
   # 超时踢出玩家时显示的消息。
   kick-message: '<gray>跨服超时，请重新连接后重试.</gray>'
 
-# 聊天栏提示
+# 聊天栏与对话框提示
 messages:
-  # 消息开头、结尾以及上下两部分之间的空行数量。
+  # 聊天栏：确认对话框后显示「正在进行跨服......」，其开头与结尾各留的空行数量。
   gap-lines: 1
-
-  # 上半部分：活动说明，可写多行。
-  # 玩家点击 [不再提示] 后不再显示。
-  notice:
-    - '<gray><white>元竞 鱼来 KOIKOI</white> 是由 <red>RIA</red> <white>×</white> <aqua>TRIALHAMMER</aqua> 联合开发的限时活动服务器.</gray>'
-    - '<gray>此服务器与 RIA 群组网络的聊天、存档和经济等系统不互通.</gray>'
-
-  # 下半部分：跨服进行中的提示，始终显示。
   transferring: '<gray>正在进行跨服......</gray>'
 
-  # “不再提示”按钮
-  dismiss:
-    # 按钮文字，会追加在上半部分最后一行的末尾。
-    text: '<u>[不再提示]</u>'
-    # 鼠标悬停提示。
-    hover: '<gray>点击后不再显示上半部分提示.</gray>'
-    # 点击后的反馈消息。
-    confirmed: '<gray>已隐藏上半部分提示.</gray>'
+  # 进服提示对话框：玩家确认后才会开始跨服流程，提示不会在跨服过程中被清掉。
+  dialog:
+    # 对话框标题
+    title: '<white>元竞 鱼来 KOIKOI</white>'
+
+    # 对话框正文，可写多行（会合并为同一个文本组件）
+    body:
+      - '<gray><white>元竞 鱼来 KOIKOI</white> 是由 <red>RIA</red> <white>×</white> <aqua>TRIALHAMMER</aqua> 联合开发的限时活动服务器.</gray>'
+      - '<gray>此服务器与 RIA 群组网络的聊天、存档和经济等系统不互通.</gray>'
+
+    # 「不再提示」复选框：默认不勾选；勾选并确认后不再弹出此对话框
+    checkbox:
+      # 表单字段名，一般无需修改
+      key: dont_show_again
+      label: '不再提示'
+      initial: false
+      # 勾选 / 未勾选时提交的值，一般无需修改
+      on-true: 'true'
+      on-false: 'false'
+
+    # 确认按钮
+    confirm:
+      label: '确认'
+      tooltip: '<gray>点击确认后开始跨服流程.</gray>'
+
+    # 是否允许按 Esc 关闭对话框；false 时必须点击确认
+    can-close-with-escape: false
+

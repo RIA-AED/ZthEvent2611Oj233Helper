@@ -8,20 +8,22 @@ import red.ria.zthevent2611.config.PluginSettings;
 import red.ria.zthevent2611.data.NoticeStore;
 import red.ria.zthevent2611.flow.TransferFlowManager;
 import red.ria.zthevent2611.listener.PlayerFlowListener;
-import red.ria.zthevent2611.message.AnnouncementService;
+import red.ria.zthevent2611.message.ChatNoticeService;
+import red.ria.zthevent2611.message.NoticeDialogService;
 
 /**
  * 元竞 鱼来 KOIKOI 活动服务器的进服旁观与跨服引导。
  *
- * <p>玩家进服后被切换为旁观模式并收到活动说明，随后插件按配置的间隔重复执行跨服命令；
- * 超过设定时间仍未离开本服的玩家会被踢出。真正的跨服由其他插件完成，本插件只负责
- * 触发命令与流程控制。
+ * <p>玩家进服后被切换为旁观模式并弹出活动说明对话框（含「不再提示」复选框与确认按钮）；
+ * 玩家确认后，插件按配置的间隔重复执行跨服命令，超过设定时间仍未离开本服的玩家会被踢出。
+ * 真正的跨服由其他插件完成，本插件只负责提示、流程控制与命令触发。
  */
 public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
 
     private volatile PluginSettings settings;
     private NoticeStore noticeStore;
-    private AnnouncementService announcements;
+    private ChatNoticeService chatNotice;
+    private NoticeDialogService noticeDialogs;
     private TransferFlowManager flows;
 
     @Override
@@ -40,9 +42,11 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
 
         noticeStore = new NoticeStore(this);
         noticeStore.load();
-        announcements = new AnnouncementService(this, noticeStore);
-        announcements.apply(loaded.announcements());
-        flows = new TransferFlowManager(this, announcements, this::settings);
+        chatNotice = new ChatNoticeService();
+        chatNotice.apply(loaded.chatMessages());
+        noticeDialogs = new NoticeDialogService(this, noticeStore);
+        noticeDialogs.apply(loaded.noticeDialog());
+        flows = new TransferFlowManager(this, chatNotice, noticeDialogs, noticeStore, this::settings);
 
         getServer().getPluginManager().registerEvents(
                 new PlayerFlowListener(this, flows, this::settings), this);
@@ -56,6 +60,9 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
     public void onDisable() {
         if (flows != null) {
             flows.shutdown();
+        }
+        if (noticeDialogs != null) {
+            noticeDialogs.shutdown();
         }
         if (noticeStore != null) {
             noticeStore.saveNow();
@@ -71,16 +78,16 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
     }
 
     /**
-     * 为玩家启动跨服流程。可在任意线程调用，内部会调度到玩家所属线程。
+     * 为玩家开始进服引导（旁观 + 提示对话框 + 跨服流程）。可在任意线程调用，内部会调度到玩家所属线程。
      *
-     * @return 玩家已在流程中或插件未启用时返回 {@code false}
+     * @return 玩家已在跨服流程中或插件未启用时返回 {@code false}
      */
-    public boolean startFlow(Player player) {
+    public boolean beginFlow(Player player) {
         TransferFlowManager manager = flows;
         if (manager == null || !player.isOnline() || manager.isActive(player.getUniqueId())) {
             return false;
         }
-        player.getScheduler().execute(this, () -> manager.start(player), null, 1L);
+        player.getScheduler().execute(this, () -> manager.begin(player), null, 1L);
         return true;
     }
 
@@ -99,9 +106,13 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
             return exception.getMessage();
         }
         settings = loaded;
-        AnnouncementService service = announcements;
-        if (service != null) {
-            service.apply(loaded.announcements());
+        ChatNoticeService chat = chatNotice;
+        if (chat != null) {
+            chat.apply(loaded.chatMessages());
+        }
+        NoticeDialogService dialogs = noticeDialogs;
+        if (dialogs != null) {
+            dialogs.apply(loaded.noticeDialog());
         }
         getLogger().info(() -> "配置已重载：自动开始=" + loaded.startOnJoin()
                 + "，游戏模式=" + (loaded.gamemode() == null ? "不改变" : loaded.gamemode())
@@ -116,12 +127,15 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
         getLogger().info("版本：" + getPluginMeta().getVersion());
         getLogger().info("进服自动开始流程：" + current.startOnJoin());
         getLogger().info("流程切换游戏模式：" + (current.gamemode() == null ? "不改变" : current.gamemode()));
+        getLogger().info("进服提示：对话框（不再提示复选框默认"
+                + (current.noticeDialog().checkboxInitial() ? "勾选" : "不勾选")
+                + "，Esc " + (current.noticeDialog().canCloseWithEscape() ? "可关闭" : "不可关闭") + "）");
+        getLogger().info("聊天栏空行：" + current.chatMessages().gapLines() + " 行；已隐藏提示的玩家："
+                + noticeStore.hiddenCount() + " 人");
         getLogger().info("跨服命令：每 " + current.intervalSeconds() + " 秒执行一次，最多 "
                 + current.attempts() + " 次（总超时 " + current.timeoutTicks() / 20 + " 秒）");
         getLogger().info("跨服命令列表：" + (current.hasCommands()
                 ? String.join(" | ", current.commands()) : "（未配置）"));
-        getLogger().info("提示空行：" + current.announcements().gapLines() + " 行；已隐藏提示的玩家："
-                + noticeStore.hiddenCount() + " 人");
         getLogger().info("================================================");
     }
 }

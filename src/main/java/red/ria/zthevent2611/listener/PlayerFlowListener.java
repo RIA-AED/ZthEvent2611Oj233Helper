@@ -13,7 +13,7 @@ import red.ria.zthevent2611.config.PluginSettings;
 import red.ria.zthevent2611.flow.TransferFlowManager;
 
 /**
- * 玩家进服时开始跨服流程，退出时清理流程状态。
+ * 玩家进服时开始引导流程，退出时清理流程状态。
  *
  * <p>进服事件不保证在玩家所属的区域线程上触发，因此对玩家状态的改动全部通过
  * {@code player.getScheduler()} 调度到正确的线程执行。
@@ -48,9 +48,7 @@ public final class PlayerFlowListener implements Listener {
             if (latest == null || !latest.startOnJoin() || !player.isOnline()) {
                 return;
             }
-            if (!flows.isActive(player.getUniqueId())) {
-                flows.start(player);
-            }
+            flows.begin(player);
         }, null, 1L);
     }
 
