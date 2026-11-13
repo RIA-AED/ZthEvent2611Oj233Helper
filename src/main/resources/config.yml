@@ -63,11 +63,19 @@ messages:
       on-true: 'true'
       on-false: 'false'
 
-    # 确认按钮
+    # 按钮
+    # 确认：勾选「不再提示」并开始跨服流程。
     confirm:
       label: '确认'
       tooltip: '<gray>点击确认后开始跨服流程.</gray>'
 
-    # 是否允许按 Esc 关闭对话框；false 时必须点击确认
+    # 取消：不开始跨服流程，直接踢出玩家（客户端会随所在网络自动回到云端）。
+    cancel:
+      label: '取消'
+      tooltip: '<gray>取消并返回云端.</gray>'
+      # 踢出玩家时显示的消息
+      kick-message: '<gray>已取消，正在返回云端.</gray>'
+
+    # 是否允许按 Esc 关闭对话框；false 时必须点击按钮
     can-close-with-escape: false
 

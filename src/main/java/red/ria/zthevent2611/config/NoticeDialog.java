@@ -8,8 +8,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 /**
  * 进服提示对话框的配置。
  *
- * <p>对话框由正文、「不再提示」复选框（默认不勾选）和确认按钮组成；玩家确认后才开始跨服流程，
- * 因此提示不会在跨服过程中被聊天栏清掉。
+ * <p>对话框由正文、「不再提示」复选框（默认不勾选）、确认与取消按钮组成；
+ * 玩家确认后才开始跨服流程，因此提示不会在跨服过程中被聊天栏清掉；
+ * 点击取消会踢出玩家（由其所在群组网络自动带回云端），不开始跨服流程。
  *
  * @param title 对话框标题
  * @param bodyLines 对话框正文的每一行
@@ -20,7 +21,10 @@ import org.bukkit.configuration.file.FileConfiguration;
  * @param checkboxOnFalse 未勾选时提交的值
  * @param confirmLabel 确认按钮文字
  * @param confirmTooltip 确认按钮的悬停提示
- * @param canCloseWithEscape 是否允许按 Esc 关闭对话框；{@code false} 时必须点击确认
+ * @param cancelLabel 取消按钮文字
+ * @param cancelTooltip 取消按钮的悬停提示
+ * @param cancelKickMessage 点击取消后踢出玩家时显示的消息
+ * @param canCloseWithEscape 是否允许按 Esc 关闭对话框；{@code false} 时必须点击按钮
  */
 public record NoticeDialog(
         Component title,
@@ -32,6 +36,9 @@ public record NoticeDialog(
         String checkboxOnFalse,
         Component confirmLabel,
         Component confirmTooltip,
+        Component cancelLabel,
+        Component cancelTooltip,
+        Component cancelKickMessage,
         boolean canCloseWithEscape
 ) {
 
@@ -90,10 +97,17 @@ public record NoticeDialog(
                 "messages.dialog.confirm.label", "确认");
         Component confirmTooltip = PluginSettings.miniMessage(config,
                 "messages.dialog.confirm.tooltip", "<gray>点击确认后开始跨服流程.</gray>");
+        Component cancelLabel = PluginSettings.miniMessage(config,
+                "messages.dialog.cancel.label", "取消");
+        Component cancelTooltip = PluginSettings.miniMessage(config,
+                "messages.dialog.cancel.tooltip", "<gray>取消并返回云端.</gray>");
+        Component cancelKickMessage = PluginSettings.miniMessage(config,
+                "messages.dialog.cancel.kick-message", "<gray>已取消，正在返回云端.</gray>");
         boolean canCloseWithEscape = config.getBoolean("messages.dialog.can-close-with-escape", false);
 
         return new NoticeDialog(title, bodyLines, checkboxKey, checkboxLabel, checkboxInitial,
-                checkboxOnTrue, checkboxOnFalse, confirmLabel, confirmTooltip, canCloseWithEscape);
+                checkboxOnTrue, checkboxOnFalse, confirmLabel, confirmTooltip,
+                cancelLabel, cancelTooltip, cancelKickMessage, canCloseWithEscape);
     }
 
     private static boolean isBlankLine(String line) {

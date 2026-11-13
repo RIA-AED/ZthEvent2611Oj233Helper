@@ -9,9 +9,10 @@
 ## 功能特性
 
 - 玩家进服后自动切换旁观模式（模式可配置，也可关闭进服自动流程）。
-- 进服弹出提示对话框：活动说明 + 「不再提示」复选框（默认不勾选）+ 确认按钮。
-  默认不允许 Esc 关闭，必须点击确认；选择会按玩家 UUID 记录在独立的 `player-data.yml` 中，重启后依然生效。
+- 进服弹出提示对话框：活动说明 + 「不再提示」复选框（默认不勾选）+ 确认 / 取消按钮。
+  默认不允许 Esc 关闭；选择会按玩家 UUID 记录在独立的 `player-data.yml` 中，重启后依然生效。
 - 玩家确认后才开始跨服流程，聊天栏显示「正在进行跨服......」（前后空行数量可配置）。
+- 点击「取消」不开始跨服流程，直接踢出玩家；客户端会随所在群组网络自动回到云端。
 - 按配置的间隔执行一整组命令，例如每 10 秒一次、最多 3 次；命令由控制台执行，
   支持 `{player}`（玩家名）与 `{uuid}`（玩家 UUID）占位符。
 - 超过「间隔 × 次数」仍未离开本服时踢出玩家，踢出消息可配置。
@@ -29,7 +30,7 @@
 
 ## 安装与快速开始
 
-1. 构建插件（见下文「构建」）或取得 `ZthEvent2611Oj233Helper-1.1.1.jar`。
+1. 构建插件（见下文「构建」）或取得 `ZthEvent2611Oj233Helper-1.2.0.jar`。
 2. 将 jar 放入服务端的 `plugins/` 目录并启动一次服务器。
 3. 编辑 `plugins/ZthEvent2611Oj233Helper/config.yml`，把 `flow.commands` 改成实际的跨服命令。
    使用 OhMyTransfer 时通常是：
@@ -49,6 +50,7 @@
 | --- | --- |
 | 玩家进服 | 切换为旁观模式，弹出活动说明对话框 |
 | 点击「确认」 | 若勾选了「不再提示」则记录下来；聊天栏显示「正在进行跨服......」，执行第 1 次跨服命令 |
+| 点击「取消」 | 不开始跨服，直接踢出玩家（显示配置的取消消息），客户端自动回到云端 |
 | 确认后 10 秒 | 第 2 次执行跨服命令 |
 | 确认后 20 秒 | 第 3 次执行跨服命令 |
 | 确认后 30 秒 | 玩家仍在本服则踢出，并显示配置的踢出消息 |
@@ -89,6 +91,9 @@
 | `messages.dialog.checkbox.on-true` / `on-false` | `true` / `false` | 勾选、未勾选时提交的值 |
 | `messages.dialog.confirm.label` | `确认` | 确认按钮文字 |
 | `messages.dialog.confirm.tooltip` | 点击确认后开始跨服流程 | 确认按钮的悬停提示 |
+| `messages.dialog.cancel.label` | `取消` | 取消按钮文字 |
+| `messages.dialog.cancel.tooltip` | 取消并返回云端 | 取消按钮的悬停提示 |
+| `messages.dialog.cancel.kick-message` | `已取消，正在返回云端.` | 点击取消后踢出玩家时显示的消息 |
 | `messages.dialog.can-close-with-escape` | `false` | 是否允许 Esc 关闭对话框；`false` 时必须点击确认 |
 
 ## 命令与权限
@@ -120,7 +125,7 @@ notice-hidden:
 ./gradlew test         # 只运行单元测试
 ```
 
-产物位于 `build/libs/ZthEvent2611Oj233Helper-1.1.1.jar`。
+产物位于 `build/libs/ZthEvent2611Oj233Helper-1.2.0.jar`。
 默认使用 Paper 26.1.2 的 API 编译；如需针对其他版本编译，可覆盖 Gradle 属性：
 
 ```bash
@@ -143,6 +148,7 @@ notice-hidden:
 
 **想临时关闭进服自动流程？**
 把 `flow.start-on-join` 设为 `false`，需要时用 `/zth-event start <player>` 手动触发。
+
 
 
 

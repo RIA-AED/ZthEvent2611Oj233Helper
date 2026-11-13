@@ -19,7 +19,7 @@ import red.ria.zthevent2611.data.NoticeStore;
 /**
  * 进服提示对话框：「不再提示」复选框 + 确认按钮。
  *
- * <p>对话框在配置应用时构建一次。确认按钮使用固定的自定义动作 {@link #CONFIRM_KEY}，
+ * <p>对话框在配置应用时构建一次。确认 / 取消按钮使用固定的自定义动作（{@link #CONFIRM_KEY}、{@link #CANCEL_KEY}），
  * 由 {@link NoticeDialogListener} 监听 {@code PlayerCustomClickEvent} 处理——这样同一个对话框
  * 可以被任意多玩家、任意多次点击，不像一次性点击回调那样在第一次点击后失效。
  */
@@ -30,6 +30,9 @@ public final class NoticeDialogService {
 
     /** 确认按钮的自定义动作标识。 */
     public static final Key CONFIRM_KEY = Key.key("zthevent2611", "notice_confirm");
+
+    /** 取消按钮的自定义动作标识。 */
+    public static final Key CANCEL_KEY = Key.key("zthevent2611", "notice_cancel");
 
     private final Plugin plugin;
     private final NoticeStore noticeStore;
@@ -115,6 +118,26 @@ public final class NoticeDialogService {
         }, null, 1L);
     }
 
+    /**
+     * 处理玩家点击取消：踢出玩家（由其所在群组网络自动带回云端），不开始跨服流程。
+     *
+     * <p>由 {@link NoticeDialogListener} 在收到 {@code PlayerCustomClickEvent} 时调用。
+     */
+    public void handleCancel(Player player) {
+        NoticeDialog current = config;
+        player.getScheduler().execute(plugin, () -> {
+            if (!player.isOnline()) {
+                return;
+            }
+            plugin.getLogger().info(() -> "玩家 " + player.getName() + " 取消了进服提示，已踢出（返回云端）");
+            if (current != null) {
+                player.kick(current.cancelKickMessage());
+            } else {
+                player.kick();
+            }
+        }, null, 1L);
+    }
+
     private void sendBodyToChat(Player player, NoticeDialog current) {
         if (current == null) {
             return;
@@ -128,6 +151,10 @@ public final class NoticeDialogService {
         ActionButton confirm = ActionButton.builder(initial.confirmLabel())
                 .tooltip(initial.confirmTooltip())
                 .action(DialogAction.customClick(CONFIRM_KEY, null))
+                .build();
+        ActionButton cancel = ActionButton.builder(initial.cancelLabel())
+                .tooltip(initial.cancelTooltip())
+                .action(DialogAction.customClick(CANCEL_KEY, null))
                 .build();
 
         DialogBase base = DialogBase.builder(initial.title())
@@ -144,7 +171,8 @@ public final class NoticeDialogService {
 
         return Dialog.create(factory -> factory.empty()
                 .base(base)
-                .type(DialogType.multiAction(List.of(confirm), null, 1)));
+                .type(DialogType.multiAction(List.of(confirm, cancel), null, 2)));
     }
 }
+
 

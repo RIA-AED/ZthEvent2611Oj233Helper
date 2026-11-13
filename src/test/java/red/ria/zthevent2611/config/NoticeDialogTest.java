@@ -37,6 +37,9 @@ class NoticeDialogTest {
                 "false",
                 Component.text("确认"),
                 Component.text("提示"),
+                Component.text("取消"),
+                Component.text("取消提示"),
+                Component.text("已取消"),
                 false);
 
         Component expected = Component.empty()
@@ -66,6 +69,21 @@ class NoticeDialogTest {
         assertEquals("true", dialog.checkboxOnTrue());
         assertEquals("false", dialog.checkboxOnFalse());
         assertEquals("第二行", MINI_MESSAGE.serialize(dialog.bodyLines().get(1)));
+    }
+
+    @Test
+    void loadsCancelButtonDefaults() {
+        YamlConfiguration config = parse("""
+                messages:
+                  dialog:
+                    body: '正文'
+                """);
+
+        NoticeDialog dialog = NoticeDialog.load(config);
+
+        assertEquals(Component.text("取消"), dialog.cancelLabel());
+        assertEquals(MINI_MESSAGE.deserialize("<gray>已取消，正在返回云端.</gray>"),
+                dialog.cancelKickMessage());
     }
 
     @Test
