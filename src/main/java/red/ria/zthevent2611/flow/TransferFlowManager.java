@@ -64,13 +64,28 @@ public final class TransferFlowManager {
     /**
      * 显式打开提示对话框（通用模式用法，托管模式下也可用）。
      *
-     * <p>与 {@link #begin(Player)} 不同：不切换游戏模式，且即使玩家选择过「不再提示」也会显示对话框。
-     * 确认后开始跨服尝试。
+     * <p>与 {@link #begin(Player)} 不同：不切换游戏模式；但同样尊重「不再提示」——
+     * 已选择过的玩家跳过对话框、直接开始跨服尝试。
      *
      * <p>应在玩家所属的 EntityScheduler 线程上调用。
      */
     public void openDialog(Player player) {
+        openDialog(player, false);
+    }
+
+    /**
+     * 显式打开提示对话框；{@code force} 为 {@code true} 时即使玩家已选择「不再提示」也显示。
+     *
+     * <p>应在玩家所属的 EntityScheduler 线程上调用。
+     */
+    public void openDialog(Player player, boolean force) {
         if (!player.isOnline()) {
+            return;
+        }
+        if (!force && noticeStore.isHidden(player.getUniqueId())) {
+            plugin.getLogger().info(() -> "玩家 " + player.getName()
+                    + " 已选择不再提示，跳过对话框并直接开始跨服流程");
+            startAttempts(player);
             return;
         }
         plugin.getLogger().info(() -> "向玩家 " + player.getName() + " 打开活动提示对话框");

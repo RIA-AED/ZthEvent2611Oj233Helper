@@ -1,6 +1,7 @@
 package red.ria.zthevent2611;
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import red.ria.zthevent2611.command.ZthEventCommand;
@@ -92,18 +93,39 @@ public final class ZthEvent2611Oj233HelperPlugin extends JavaPlugin {
     }
 
     /**
-     * 向玩家打开提示对话框（不切换游戏模式、不判断「不再提示」），确认后开始跨服流程。
+     * 向玩家打开提示对话框（不切换游戏模式），确认后开始跨服流程。
      * 可供其他插件调用（例如 NPC 交互、自定义命令）。
+     *
+     * <p>已选择「不再提示」的玩家会跳过对话框、直接开始跨服流程；
+     * 需要强制显示对话框时使用 {@link #openDialog(Player, boolean)} 并传 {@code true}。
      *
      * @return 玩家已在跨服流程中或插件未启用时返回 {@code false}
      */
     public boolean openDialog(Player player) {
+        return openDialog(player, false);
+    }
+
+    /**
+     * 向玩家打开提示对话框（不切换游戏模式）；{@code force} 为 {@code true} 时
+     * 即使玩家已选择「不再提示」也显示对话框。
+     *
+     * @return 玩家已在跨服流程中或插件未启用时返回 {@code false}
+     */
+    public boolean openDialog(Player player, boolean force) {
         TransferFlowManager manager = flows;
         if (manager == null || !player.isOnline() || manager.isActive(player.getUniqueId())) {
             return false;
         }
-        player.getScheduler().execute(this, () -> manager.openDialog(player), null, 1L);
+        player.getScheduler().execute(this, () -> manager.openDialog(player, force), null, 1L);
         return true;
+    }
+
+    /**
+     * 玩家是否在提示对话框里勾选过「不再提示」。
+     */
+    public boolean isNoticeHidden(UUID playerId) {
+        NoticeStore store = noticeStore;
+        return store != null && store.isHidden(playerId);
     }
 
     /**

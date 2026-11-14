@@ -41,10 +41,14 @@ public final class ZthEventCommand {
                 .executes(this::sendHelp)
                 .then(Commands.literal("open")
                         .requires(source -> canOpen(source.getSender()))
-                        .executes(this::openSelf)
+                        .executes(context -> openSelf(context, false))
+                        .then(Commands.literal("force")
+                                .executes(context -> openSelf(context, true)))
                         .then(Commands.argument("player", ArgumentTypes.player())
                                 .requires(source -> canOpenOthers(source.getSender()))
-                                .executes(this::openOther)))
+                                .executes(context -> openOther(context, false))
+                                .then(Commands.literal("force")
+                                        .executes(context -> openOther(context, true)))))
                 .then(Commands.literal("start")
                         .requires(source -> canStart(source.getSender()))
                         .then(Commands.argument("player", ArgumentTypes.player())
@@ -62,12 +66,12 @@ public final class ZthEventCommand {
                 .append(Component.text("跨服提示与流程", NamedTextColor.GRAY)));
         List<Component> lines = new ArrayList<>();
         if (canOpen(sender)) {
-            lines.add(commandLine("/zth-event open", "打开提示对话框",
-                    "为自己打开进服提示对话框，确认后执行跨服命令。"));
+            lines.add(commandLine("/zth-event open [force]", "打开提示对话框",
+                    "打开进服提示对话框；已选择不再提示的玩家会直接开始跨服流程，force 强制显示。"));
         }
         if (canOpenOthers(sender)) {
-            lines.add(commandLine("/zth-event open <player>", "为玩家打开提示对话框",
-                    "为指定玩家打开进服提示对话框。"));
+            lines.add(commandLine("/zth-event open <player> [force]", "为玩家打开提示对话框",
+                    "为指定玩家打开提示对话框；已选择不再提示的玩家会直接开始跨服流程，force 强制显示。"));
         }
         if (canStart(sender)) {
             lines.add(commandLine("/zth-event start <player>", "开始托管引导",
@@ -81,33 +85,43 @@ public final class ZthEventCommand {
         return Command.SINGLE_SUCCESS;
     }
 
-    private int openSelf(CommandContext<CommandSourceStack> context) {
+    private int openSelf(CommandContext<CommandSourceStack> context, boolean force) {
         CommandSender sender = context.getSource().getSender();
         if (!(sender instanceof Player player)) {
             sender.sendMessage(Component.text("只有玩家可以直接打开对话框，请使用 /zth-event open <player>。",
                     NamedTextColor.GRAY));
             return 0;
         }
-        if (!plugin.openDialog(player)) {
+        boolean hidden = !force && plugin.isNoticeHidden(player.getUniqueId());
+        if (!plugin.openDialog(player, force)) {
             sender.sendMessage(Component.text("你已在跨服流程中。", NamedTextColor.GRAY));
             return 0;
+        }
+        if (hidden) {
+            sender.sendMessage(Component.text("你已选择不再提示，不再显示提示，直接开始跨服流程。"
+                    + "如需重新查看提示，请使用 /zth-event open force。", NamedTextColor.GRAY));
         }
         return Command.SINGLE_SUCCESS;
     }
 
-    private int openOther(CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    private int openOther(CommandContext<CommandSourceStack> context, boolean force)
+            throws CommandSyntaxException {
         CommandSourceStack source = context.getSource();
         Player target = resolveTarget(context, source);
         if (target == null) {
             return 0;
         }
-        if (!plugin.openDialog(target)) {
+        boolean hidden = !force && plugin.isNoticeHidden(target.getUniqueId());
+        if (!plugin.openDialog(target, force)) {
             source.getSender().sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
             return 0;
         }
-        source.getSender().sendMessage(Component.text("已为 ", NamedTextColor.GRAY)
+        Component feedback = Component.text("已为 ", NamedTextColor.GRAY)
                 .append(Component.text(target.getName(), NamedTextColor.WHITE))
-                .append(Component.text(" 打开提示对话框。", NamedTextColor.GRAY)));
+                .append(Component.text(hidden
+                        ? " 跳过提示并开始跨服流程（该玩家已选择不再提示，force 可强制显示）。"
+                        : " 打开提示对话框。", NamedTextColor.GRAY));
+        source.getSender().sendMessage(feedback);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -118,6 +132,7 @@ public final class ZthEventCommand {
             return 0;
         }
         boolean managed = plugin.settings() != null && plugin.settings().managed();
+        boolean hidden = !managed && plugin.isNoticeHidden(target.getUniqueId());
         boolean started = managed ? plugin.beginFlow(target) : plugin.openDialog(target);
         if (!started) {
             source.getSender().sendMessage(Component.text("该玩家已在跨服流程中。", NamedTextColor.GRAY));
@@ -125,7 +140,9 @@ public final class ZthEventCommand {
         }
         Component feedback = Component.text("已为 ", NamedTextColor.GRAY)
                 .append(Component.text(target.getName(), NamedTextColor.WHITE))
-                .append(Component.text(managed ? " 开始引导流程。" : " 打开提示对话框。", NamedTextColor.GRAY));
+                .append(Component.text(managed ? " 开始引导流程。"
+                        : hidden ? " 跳过提示并开始跨服流程。"
+                        : " 打开提示对话框。", NamedTextColor.GRAY));
         source.getSender().sendMessage(feedback);
         return Command.SINGLE_SUCCESS;
     }

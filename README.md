@@ -19,6 +19,8 @@
 
 - 提示对话框：活动说明 + 「不再提示」复选框（默认不勾选）+ 确认 / 取消按钮。
   默认不允许 Esc 关闭；勾选「不再提示」并确认后按玩家 UUID 记录在独立的 `player-data.yml` 中，重启后依然生效。
+  之后进服、`/zth-event open` 与其他插件调用 `openDialog` 都会跳过对话框直接开始跨服流程；
+  需要强制再显示一次时使用 `/zth-event open force`（管理员可为他人加 `force`）。
 - 确认后开始跨服流程，聊天栏显示「正在进行跨服......」（前后空行数量可配置）。
 - 按配置的间隔执行一整组命令，例如每 10 秒一次、最多 3 次；命令由控制台执行，
   支持 `{player}`（玩家名）与 `{uuid}`（玩家 UUID）占位符。
@@ -53,6 +55,8 @@
 3. 由玩家执行 `/zth-event open`，或由管理员 `/zth-event open <玩家>`、其他插件调用
    `ZthEvent2611Oj233HelperPlugin#openDialog(Player)` 打开对话框。
 4. 玩家确认后执行跨服命令；取消只关闭对话框。
+   已勾选过「不再提示」的玩家不会被再次打扰：打开对话框时直接开始跨服流程，
+   需要强制显示时用 `/zth-event open force`。
 
 ## 流程说明
 
@@ -122,8 +126,10 @@
 
 | 命令 | 权限 | 默认 | 说明 |
 | --- | --- | --- | --- |
-| `/zth-event open` | `zthevent2611.command.open` | 所有人 | 为自己打开提示对话框 |
-| `/zth-event open <player>` | `zthevent2611.command.open.others` | op | 为指定玩家打开提示对话框 |
+| `/zth-event open` | `zthevent2611.command.open` | 所有人 | 为自己打开提示对话框；已选择不再提示的玩家直接开始流程 |
+| `/zth-event open force` | `zthevent2611.command.open` | 所有人 | 强制显示提示对话框（忽略「不再提示」） |
+| `/zth-event open <player>` | `zthevent2611.command.open.others` | op | 为指定玩家打开提示对话框；已选择不再提示的玩家直接开始流程 |
+| `/zth-event open <player> force` | `zthevent2611.command.open.others` | op | 强制为指定玩家显示提示对话框 |
 | `/zth-event start <player>` | `zthevent2611.command.start` | op | 托管模式：为玩家切换旁观并开始引导；通用模式：等同 open |
 | `/zth-event reload` | `zthevent2611.command.reload` | op | 重载配置；新配置无效时保留旧配置 |
 | — | `zthevent2611.bypass` | op | 托管模式下进服时跳过旁观模式切换与自动流程，便于管理员调试 |
@@ -136,7 +142,8 @@
 
 ```java
 ZthEvent2611Oj233HelperPlugin plugin = getPlugin(ZthEvent2611Oj233HelperPlugin.class);
-plugin.openDialog(player);
+plugin.openDialog(player);           // 尊重「不再提示」：已选择过的玩家直接开始流程
+plugin.openDialog(player, true);     // 强制显示对话框（例如管理员预览）
 ```
 
 ## 数据文件
@@ -148,8 +155,8 @@ notice-hidden:
   - 00000000-0000-0000-0000-000000000000
 ```
 
-希望某个玩家重新看到自动弹出的提示时，从该列表中删除对应 UUID 并重载插件或重启服务器即可。
-（用命令显式打开对话框不受该记录影响。）
+希望某个玩家重新看到提示时，从该列表中删除对应 UUID 并重载插件或重启服务器即可；
+临时查看可用 `/zth-event open force`，不需要修改数据文件。
 
 ## 构建
 
@@ -173,6 +180,13 @@ notice-hidden:
 
 **管理员进服也被切换成旁观模式？**
 给该管理员 `zthevent2611.bypass` 权限（默认 op 自带）后重新进服。
+注意：拥有该权限的管理员进服不会自动弹窗，测试对话框请用 `/zth-event open`；
+若该账号之前勾选过「不再提示」，用 `/zth-event open force` 强制显示。
+
+**勾了「不再提示」，但对话框还是出现？**
+先确认点击的是「确认」而不是「取消」，再看控制台是否有
+`确认了活动提示（不再提示=true）` 与 `player-data.yml` 中的 UUID。
+带 `force` 的打开命令会忽略该记录；不带 `force` 时记录一旦存在，进服与命令打开都会跳过对话框。
 
 **玩家一直停在对话框上不确认？**
 这是设计行为：确认前不会开始跨服，避免提示被跨服过程清掉。需要玩家点击「确认」后才会继续。
